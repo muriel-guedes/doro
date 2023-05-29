@@ -1,7 +1,7 @@
 use std::io::{stdout, Write};
 use crossterm::execute;
 
-use crate::settings::TAB_SIZE;
+use crate::utils::get_cursor_position;
 
 pub struct Buffer {
     data: Vec<Vec<char>>
@@ -21,37 +21,21 @@ impl Buffer {
         }
     }
     pub fn update(&self) {
-        let (x, y) = get_cursor_position();
-        execute!(stdout(), crossterm::cursor::Hide).unwrap();
+        let cursor_pos = get_cursor_position();
         crate::utils::clear_screen();
         let (w, h) = crossterm::terminal::size().unwrap();
-        if w == 0 || h == 0 { return }
         let mut buf = Vec::new();
-        for cy in 0..self.data.len().max((h-1)as usize) {
-            for cx in 0..self.data[cy].len().max((w-1)as usize) {
-                let c = self.data[cy][cx];
-                if c == '\t' {
-                    for _ in 0..TAB_SIZE {
-                        buf.push(b' ')
+        if self.data.len() > 2 && h > 2 && w > 2 {
+            for cy in 0..self.data.len().max((h-1)as usize) {
+                if self.data[cy].len() > 0 {
+                    for cx in 0..self.data[cy].len().max((w-1)as usize) {
+                        buf.push(self.data[cy][cx] as u8);
                     }
-                } else {
-                    buf.push(c as u8)
+                    buf.push(b'\n')
                 }
             }
-            buf.push(b'\n')
-        }
-        let mut cx = 0;
-        for i in 0..self.letter.min(self.data[self.line].len()) {
-            cx += if self.data[self.line][i] == '\t' { TAB_SIZE } else { 1 }
         }
         stdout().write_all(&buf).unwrap();
         stdout().flush().unwrap();
-        execute!(stdout(), crossterm::cursor::Show).unwrap();
-        execute!(stdout(), crossterm::cursor::MoveTo(letter as u16, line as u16)).unwrap();
     }
-}
-
-pub fn get_cursor_position() -> (usize, usize) {
-    let pos = crossterm::cursor::position().unwrap();
-    (pos.0 as usize, pos.1 as usize)
 }

@@ -1,1 +1,1 @@
-pub const TAB_SIZE: usize = 4;
+pub static mut TAB_SIZE: usize = 8;

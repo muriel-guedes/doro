@@ -7,7 +7,7 @@ mod utils;
 
 fn main() {
     terminal::SetTitle("DORO");
-    utils::clear_screen_all();
+    unsafe { settings::TAB_SIZE = utils::get_tab_size() }
     
     let mut buf = buffer::Buffer::new();
     loop {
