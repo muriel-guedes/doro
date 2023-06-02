@@ -1,27 +1,49 @@
-use std::io::{stdout, Write};
-use crossterm::{execute, terminal::{self, ClearType}};
+use std::{io::{stdout, Write}, panic};
+use crossterm::{execute, terminal::{self, ClearType}, cursor};
 
 pub fn clear_screen() {
-    let mut stdout = stdout();
-    execute!(stdout, terminal::Clear(ClearType::UntilNewLine)).unwrap();
-    execute!(stdout, crossterm::cursor::MoveTo(0, 0)).unwrap();
+    execute!(stdout(), cursor::Hide).unwrap();
+    for y in 0..terminal::size().unwrap().1 {
+        execute!(stdout(), cursor::MoveTo(0, y)).unwrap();
+        execute!(stdout(), terminal::Clear(ClearType::CurrentLine)).unwrap();
+    }
+    execute!(stdout(), cursor::MoveTo(0, 0)).unwrap();
+    stdout().flush().unwrap();
 }
 pub fn clear_screen_all() {
-    let mut stdout = stdout();
-    execute!(stdout, terminal::Clear(ClearType::All)).unwrap();
-    execute!(stdout, crossterm::cursor::MoveTo(0, 0)).unwrap();
-}
-pub fn get_cursor_position() -> (usize, usize) {
-    let pos = crossterm::cursor::position().unwrap();
-    (pos.0 as usize, pos.1 as usize)
-}
-pub fn get_tab_size() -> usize {
-    clear_screen_all();
-    let (ix, iy) = get_cursor_position();
-    print!("\t");
+    execute!(
+        stdout(),
+        cursor::MoveTo(0, 0),
+        terminal::Clear(ClearType::All),
+        cursor::Hide
+    ).unwrap();
     stdout().flush().unwrap();
-    let (fx, fy) = get_cursor_position();
+}
+pub fn show_cursor(x: u16, y: u16) {
+    execute!(stdout(), cursor::MoveTo(x, y), cursor::Show).unwrap()
+}
+
+pub fn init() {
+	panic::set_hook(Box::new(|panic_info| {
+        exit();
+        std::fs::OpenOptions::new()
+            .append(true)
+            .create(true)
+            .write(true)
+            .open("./doro_logs.log").unwrap()
+            .write_all(panic_info.to_string().as_bytes()).unwrap();
+        eprintln!("{panic_info}")
+	}));
+    terminal::enable_raw_mode().unwrap();
+    execute!(stdout(),
+        terminal::SetTitle("DORO"),
+        terminal::DisableLineWrap,
+        cursor::SetCursorStyle::SteadyBar
+    ).unwrap();
     clear_screen_all();
-    assert!(iy == fy && fx >= ix);
-    fx - ix
+}
+
+pub fn exit() {
+    clear_screen_all();
+    terminal::disable_raw_mode().unwrap();
 }

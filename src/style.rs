@@ -1,35 +1,80 @@
-/// Foreground
-/// Bright foreground
-/// Background
-/// Bright background
 #[derive(Copy, Clone)]
-pub struct Color {
-    pub fg: u8,
-    pub bfg: u8,
-    pub bg: u8,
-    pub bbg: u8,
-}
 #[allow(dead_code)]
+pub enum Color {
+    Black,
+    Red,
+    Green,
+    Yellow,
+    Blue,
+    Magenta,
+    Cyan,
+    White,
+    BrightBlack,
+    BrightRed,
+    BrightGreen,
+    BrightYellow,
+    BrightBlue,
+    BrightMagenta,
+    BrightCyan,
+    BrightWhite
+}
 impl Color {
-    pub const BLACK: Self = Self::new(30, 90, 40, 100);
-    pub const RED: Self = Self::new(31, 91, 41, 101);
-    pub const GREEN: Self = Self::new(32, 92, 42, 102);
-    pub const YELLOW: Self = Self::new(33, 93, 43, 103);
-    pub const BLUE: Self = Self::new(34, 94, 44, 104);
-    pub const MAGENTA: Self = Self::new(35, 95, 45, 105);
-    pub const CYAN: Self = Self::new(36, 96, 46, 106);
-    pub const WHITE: Self = Self::new(37, 97, 47, 107);
-
-    const fn new(fg: u8, bfg: u8, bg: u8, bbg: u8) -> Self {
-        Self { fg, bfg, bg, bbg }
+    #[inline(always)]
+    const fn is_bright(self) -> bool {
+        match self {
+            Self::BrightBlack | Self::BrightRed | Self::BrightGreen | Self::BrightYellow |
+            Self::BrightBlue | Self::BrightMagenta | Self::BrightCyan | Self::BrightWhite
+                => true,
+            _ => false
+        }
+    }
+    #[inline(always)]
+    pub const fn fg(self) -> u8 {
+        if self.is_bright() {
+            self as u8 - Self::BrightBlack as u8 + 90
+        } else {
+            self as u8 + 30
+        }
+    }
+    #[inline(always)]
+    pub const fn bg(self) -> u8 {
+        if self.is_bright() {
+            self as u8 - Self::BrightBlack as u8 + 100
+        } else {
+            self as u8 + 40
+        }
+    }
+}
+#[derive(Copy, Clone)]
+pub struct Style {
+    pub bg: Color,
+    pub fg: Color
+}
+impl Style {
+    pub const fn new(bg: Color, fg: Color) -> Self {
+        Self { bg, fg }
+    }
+    pub fn to_string(self) -> String {
+        format!("\x1B[{};{}m", self.bg.bg(), self.fg.fg())
     }
 }
 
 #[allow(unused)]
-macro_rules! colored {
-    ($text: expr, $bg: expr, $fg: expr) => {
-        format!("\x1B[{};{}m{}\x1b[0m", $bg, $fg, $text)
+macro_rules! write_with_style {
+    ($f: expr, $style: expr, $text: expr) => {
+        write!(&mut $f, "\x1B[{};{}m{}\x1b[0m", $style.bg.bg(), $style.fg.fg(), $text).unwrap()
+    };
+    ($f: expr, $style: expr, $text: literal) => {
+        write!(&mut $f, "\x1B[{};{}m{}\x1b[0m", $style.bg.bg(), $style.fg.fg(), format!($text)).unwrap()
+    };
+    ($f: expr, $style: expr, $text: literal, $($arg: tt)*) => {
+        write!(&mut f, "\x1B[{};{}m{}\x1b[0m", $style.bg.bg(), $style.fg.fg(), format!($text, $($arg)*))
     };
 }
+
 #[allow(unused)]
-pub(crate) use colored;
+pub(crate) use write_with_style;
+
+
+// bold = 1
+// italic = 3
