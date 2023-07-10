@@ -1,0 +1,11 @@
+[lib]
+proc-macro = true
+
+[package]
+name = "ui-macros"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+syn = "2.0.24"
+quote = "1.0.29"
